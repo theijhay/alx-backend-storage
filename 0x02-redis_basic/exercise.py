@@ -106,25 +106,13 @@ class Cache:
         return self.decode("utf-8")
 
 
-class Cache:
-    """Existing code..."""
-
-    def replay(self, method):
-        inputs_key = "{}:inputs".format(method.__qualname__)
-        outputs_key = "{}:outputs".format(method.__qualname__)
-
-        inputs = self._redis.lrange(inputs_key, 0, -1)
-        outputs = self._redis.lrange(outputs_key, 0, -1)
-
-        if not inputs or not outputs:
-            return "No history found for {}".format(method.__qualname__)
-
-        history = zip(inputs, outputs)
-        history_str = "\n".join(
-            "{} -> {}".format(input.decode('utf-8'), output.decode('utf-8'))
-            for input, output in history
-        )
-
-        return "{} was called {} times:\n{}".format(
-            method.__qualname__, len(inputs), history_str
-        )
+def replay(method, cache):
+    key_inputs = f"{method.__qualname__}:inputs"
+    key_outputs = f"{method.__qualname__}:outputs"
+    inputs = cache._redis.lrange(key_inputs, 0, -1)
+    outputs = cache._redis.lrange(key_outputs, 0, -1)
+    print(f"{method.__qualname__} was called {len(inputs)} times:")
+    for input, output in zip(inputs, outputs):
+        input_str = input.decode('utf-8').replace("'", "")
+        output_str = output.decode('utf-8')
+        print(f"{method.__qualname__}(*{input_str}) -> {output_str}")
