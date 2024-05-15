@@ -49,17 +49,6 @@ class Cache:
     def get_int(self, key: str) -> int:
         return self.get(key, int)
 
-    '''def count_calls(method: Callable) -> Callable:
-    """Counts times the cache method is called"""
-    key = method.__qualname__
-
-    @wraps(method)
-    def wrapper(self, *args, **kwargs):
-        """returns the wrapper"""
-        self._redis.incr(key)
-        return method(self, *args, **kwargs)
-    return wrapper'''
-
 
 def call_history(method: Callable) -> Callable:
 
