@@ -104,3 +104,15 @@ class Cache:
     def get_str(self: bytes) -> str:
         """get a string"""
         return self.decode("utf-8")
+
+
+def replay(method, cache):
+    key_inputs = f"{method.__qualname__}:inputs"
+    key_outputs = f"{method.__qualname__}:outputs"
+    inputs = cache._redis.lrange(key_inputs, 0, -1)
+    outputs = cache._redis.lrange(key_outputs, 0, -1)
+    print(f"{method.__qualname__} was called {len(inputs)} times:")
+    for input, output in zip(inputs, outputs):
+        input_str = input.decode('utf-8').replace("'", "")
+        output_str = output.decode('utf-8')
+        print(f"{method.__qualname__}(*{input_str}) -> {output_str}")
