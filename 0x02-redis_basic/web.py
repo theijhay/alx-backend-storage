@@ -1,40 +1,33 @@
 #!/usr/bin/env python3
-"""
-Implementing an expiring web cache and tracker
-"""
-import requests
+"""Implementing an expiring web cache and tracker"""
+
 import redis
+import requests
+from typing import Callable
 from functools import wraps
 
-store = redis.Redis()
-# Connect to Redis server
 
-
-def count_url_access(method):
-    """ counts time for url access """
+def access(method: Callable) -> Callable:
+    """decorator for get_page"""
     @wraps(method)
-    def wrapper(url):
-        # Check if URL data is cached
-        keys = "cached:" + url
-        datas = store.get(cached_key)
-        if datas:
-            return datas.decode("utf-8")
-        # Return cached data
-
-        # If not cached, track access count and cache the result
-        counter = "count:" + url
-        fetch = method(url)  # Call the original function to fetch HTML content
-
-        store.incr(count_key)  # Increment access count for this URL
-        store.set(cached_key, html)  # Cache the HTML content
-        store.expire(cached_key, 10)
-        # Set expiration time for the cache (10 seconds)
-        return fetch
-    return wrapper
+    def count(url: str) -> str:
+        """track how many times a particular URL was accessed"""
+        redis_client = redis.Redis()
+        redis_client.incr(f'count:{url}')
+        cached = redis_client.get(f'cached:{url}')
+        if cached:
+            return cached.decode('utf-8')
+        res = method(url)
+        redis_client.setex(f'cached:{url}', 10, res)
+        return res
+    return count
 
 
-@count_url_access  # Apply the decorator to the get_page function
+@access
 def get_page(url: str) -> str:
-    """ Returns HTML content of a url """
-    res = requests.get(url)  # Fetch HTML content from the URL
-    return res.text  # Return the HTML content as a string
+    """send request to url"""
+    return requests.get(url).text
+
+
+if __name__ == '__main__':
+    get_page('http://google.com')
